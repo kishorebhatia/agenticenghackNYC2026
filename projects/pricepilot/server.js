@@ -40,10 +40,11 @@ app.use((req, res, next) => {
 });
 
 const RECIPIENT_WALLET = process.env.RECIPIENT_WALLET;
+const TEMPO_USDC = "0x20C000000000000000000000b9537d11c60E8b50";
 
 const dual = createDual402({
   mpp: {
-    currency: process.env.USDC_TEMPO,
+    currency: process.env.USDC_TEMPO || TEMPO_USDC,
     recipient:
       process.env.MPP_RECIPIENT || RECIPIENT_WALLET || process.env.RECIPIENT,
     secretKey: process.env.MPP_SECRET_KEY,
