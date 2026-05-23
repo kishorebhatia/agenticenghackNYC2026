@@ -226,34 +226,34 @@ ebay = await client.agent.run(agent="ebay_search", params={"query": "Sony WH-100
 
 ## ClickHouse Schema
 
+Database: `pricepilot`. (The legacy `scraping` DB from the v1 iteration is left in place but nothing new writes there.)
+
 ```sql
-CREATE TABLE price_events (
+CREATE TABLE pricepilot.price_events (
   user_id      String,
-  product_id   String,         -- canonical key: lower(brand + ' ' + model_token)
+  product_id   String,                    -- canonical key
   product_name String,
-  query        String,         -- original user query for traceability
-  url          String,
-  source       LowCardinality(String),   -- 'amazon' | 'walmart' | 'target' | 'best_buy' | 'home_depot' | 'ebay' | 'stockx'
+  url          String,                    -- exact URL scraped for THIS observation
+  source       LowCardinality(String),    -- 'amazon' | 'walmart' | ...
   price        Float64,
   currency     String DEFAULT 'USD',
-  in_stock     UInt8,
-  is_resale    UInt8 DEFAULT 0,         -- distinguishes new-retail vs secondary market
   timestamp    DateTime DEFAULT now()
 ) ENGINE = MergeTree()
 ORDER BY (product_id, source, timestamp);
 
-CREATE TABLE tracked_products (
+CREATE TABLE pricepilot.tracked_products (
   user_id      String,
   product_id   String,
   product_name String,
+  amazon_url   String,
+  walmart_url  String DEFAULT '',
   threshold    Float64,
-  active       UInt8 DEFAULT 1,
-  created_at   DateTime DEFAULT now()
+  active       UInt8 DEFAULT 1
 ) ENGINE = ReplacingMergeTree()
 ORDER BY (user_id, product_id);
 ```
 
-Note: no per-retailer URL columns. URLs live in `price_events.url` — one product can have N retailers.
+Note: per-retailer URLs live on `tracked_products` (`amazon_url` / `walmart_url`) so the poller can fan out without re-resolving products on every tick. `price_events.url` records the exact URL scraped for each observation. Adding a retailer = adding a `<retailer>_url` column to `tracked_products`.
 
 ---
 

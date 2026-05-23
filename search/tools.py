@@ -89,7 +89,7 @@ TOOL_SCHEMAS = [
         "description": (
             "Phase 1. Find the cheapest in-stock listing of a product on Amazon "
             "for the requested size + color. Returns the best offer plus the raw "
-            "Amazon offer. Persists one row to ClickHouse listings_observations."
+            "Amazon offer. Persists one row to ClickHouse pricepilot.price_events."
         ),
         "input_schema": _INPUT_SCHEMA,
     },
@@ -239,9 +239,12 @@ def _rank_and_persist(
 
 def _persist_observation(spec: ProductSpec, offer: Offer) -> str:
     """
-    Insert one row into ClickHouse listings_observations and return the row id.
+    Insert one row into ClickHouse pricepilot.price_events and return the row id.
 
-    Schema: ../clickhouse-setup.sql
+    Schema: ../migrations/002_create_price_events.sql (8 cols: user_id,
+    product_id, product_name, url, source, price, currency, timestamp).
+    Offer fields not in the schema (in_stock, seller, shipping_cost) are
+    used for ranking only and not persisted.
     """
     raise NotImplementedError("Wire up clickhouse-connect insert here")
 
